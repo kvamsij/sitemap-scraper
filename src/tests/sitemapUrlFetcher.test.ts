@@ -3,7 +3,7 @@ import axios from 'axios';
 import zlib from 'zlib';
 
 jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedAxiosGet = axios.get as jest.MockedFunction<typeof axios.get>;
 
 describe('SitemapUrlFetcher', () => {
   const xmlSitemap = `
@@ -16,7 +16,7 @@ describe('SitemapUrlFetcher', () => {
   const gzippedSitemap = zlib.gzipSync(xmlSitemap);
 
   it('should fetch and return raw content from a standard XML sitemap', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: xmlSitemap, headers: { 'content-type': 'application/xml' } });
+    mockedAxiosGet.mockResolvedValueOnce({ data: xmlSitemap, headers: { 'content-type': 'application/xml' } });
 
     const fetcher = new SitemapUrlFetcher();
     const content = await fetcher.fetchSitemapContent('https://example.com/sitemap.xml');
@@ -25,7 +25,7 @@ describe('SitemapUrlFetcher', () => {
   });
 
   it('should fetch and return raw content from a gzipped sitemap', async () => {
-    mockedAxios.get.mockResolvedValueOnce({ data: gzippedSitemap, headers: { 'content-type': 'application/gzip' } });
+    mockedAxiosGet.mockResolvedValueOnce({ data: gzippedSitemap, headers: { 'content-type': 'application/gzip' } });
 
     const fetcher = new SitemapUrlFetcher();
     const content = await fetcher.fetchSitemapContent('https://example.com/sitemap.xml.gz');
@@ -34,12 +34,13 @@ describe('SitemapUrlFetcher', () => {
   });
 
   it('should throw an error if fetching the sitemap fails', async () => {
-    mockedAxios.get.mockRejectedValueOnce(new Error('Network error'));
+    const sitemapUrl = 'https://example.com/sitemap.xml';
+    mockedAxiosGet.mockRejectedValueOnce(new Error('Network error')); // Simulate a network error
 
     const fetcher = new SitemapUrlFetcher();
 
-    await expect(fetcher.fetchSitemapContent('https://example.com/sitemap.xml')).rejects.toThrow(
-      'Failed to fetch or parse sitemap: https://example.com/sitemap.xml - Network error'
+    await expect(fetcher.fetchSitemapContent(sitemapUrl)).rejects.toThrow(
+      'SitemapUrlFetcher.fetchSitemapContent: Failed to fetch resource: https://example.com/sitemap.xml - Network error'
     );
   });
 });

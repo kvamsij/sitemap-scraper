@@ -14,6 +14,7 @@ Setup:
    - `xml2js` for parsing XML sitemaps.
    - `csv-writer` for writing CSV files.
    - `slugify` for generating slugified folder names.
+   - `winston` for centralized logging.
 
 2. Ensure the project is initialized with a `package.json` file and includes scripts for building, running, and testing the application.
 
@@ -25,6 +26,7 @@ Development Plan:
 
 2. **Fetching `robots.txt`**:
    - Create a class (`RobotsFetcher`) to fetch the `robots.txt` file from the provided domain.
+   - Use the `httpRequest` utility for making HTTP requests.
 
 3. **Parsing `robots.txt`**:
    - Create a class (`RobotsParser`) to parse the `robots.txt` file to:
@@ -48,13 +50,12 @@ Development Plan:
    - Create a class (`FileWriter`) to write the extracted URLs to a file in the desired format (`csv`, `json`, or `txt`).
    - Organize the output into folders named after the slugified domain (e.g., `www-myprotein-com` for `https://www.myprotein.com`).
 
-8. **Optimizing URL Extraction**:
-   - Implement parallel processing or batching to speed up the extraction of URLs from large sitemaps.
-   - Use a configurable concurrency limit to control the number of parallel requests.
+8. **Centralized Error Handling**:
+   - Implement a centralized error-handling mechanism (`ErrorHandler`) to manage exceptions gracefully.
+   - Exit the application for unknown errors after logging the details.
 
-9. **Logging System**:
-   - Add verbose logging to track the progress of sitemap processing.
-   - Log errors and warnings for better debugging.
+9. **Centralized HTTP Requests**:
+   - Use the `httpRequest` utility for all HTTP requests, ensuring consistent error handling and logging.
 
 10. **Testing**:
     - Write unit tests for each class and method using `jest`.
@@ -71,16 +72,13 @@ Standards:
 3. **Class-Based Design**:
    - Use classes to encapsulate functionality and promote modularity.
 
-4. **Centralized Error Handling**:
-   - Implement a centralized error-handling mechanism to manage exceptions gracefully.
+4. **Centralized Logging**:
+   - Use the `winston` library for verbose logging and error logging.
 
-5. **Centralized Logging**:
-   - Use `console.log` for verbose logging and `console.error` for error logging. Future implementation may include a logging library like `winston`.
-
-6. **Documentation**:
+5. **Documentation**:
    - Document all classes, methods, and significant logic using JSDoc or similar tools.
 
-7. **Code Quality**:
+6. **Code Quality**:
    - Use a linter (e.g., ESLint) and formatter (e.g., Prettier) to maintain code quality and consistency.
 
 Development Workflow:
@@ -93,7 +91,7 @@ Development Workflow:
      ├── fetch/                # Fetches robots.txt and sitemaps
      ├── parse/                # Parses robots.txt
      ├── filter/               # Filters product-specific sitemaps and URLs
-     ├── log/                  # (Future) Logging system
+     ├── log/                  # Centralized logging system
      ├── write/                # Writes data to files
      ├── process/              # Processes sitemaps and URLs
      ├── tests/                # Unit tests

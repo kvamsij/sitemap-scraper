@@ -1,21 +1,21 @@
-import { SitemapUrlFetcher } from '../fetch/sitemapUrlFetcher';
+import { SitemapFetcher } from './SitemapFetcher';
 import { UrlFilter } from '../filter/urlFilter';
-import { FileWriter } from '../write/fileWriter';
 import logger from '../log/Logger';
+import { FileWriter } from '../write/fileWriter';
 
 export class SitemapProcessor {
-  private sitemapFetcher: SitemapUrlFetcher;
+  private sitemapFetcher: SitemapFetcher;
   private urlFilter: UrlFilter;
   private verbose: boolean;
   private fileWriter: FileWriter;
   private concurrencyLimit: number;
 
   constructor(
-    sitemapFetcher: SitemapUrlFetcher,
+    sitemapFetcher: SitemapFetcher,
     urlFilter: UrlFilter,
     fileWriter: FileWriter,
     verbose = true,
-    concurrencyLimit = 5 // Default concurrency limit
+    concurrencyLimit = 5
   ) {
     this.sitemapFetcher = sitemapFetcher;
     this.urlFilter = urlFilter;
@@ -28,21 +28,20 @@ export class SitemapProcessor {
     if (this.verbose) logger.info(message);
   }
 
-  private async processSitemapBatch(
-    sitemaps: string[],
+  private async processNestedSitemaps(
+    nestedSitemaps: string[],
     visited: Set<string>,
     format: 'csv' | 'json' | 'txt'
   ): Promise<string[]> {
-    if (sitemaps.length === 0) {
-      this.log('No sitemaps to process in this batch.');
-      return [];
+    let allUrls: string[] = [];
+    for (let i = 0; i < nestedSitemaps.length; i += this.concurrencyLimit) {
+      const batch = nestedSitemaps.slice(i, i + this.concurrencyLimit);
+      const batchUrls = await Promise.all(
+        batch.map((sitemap) => this.fetchUrlsRecursively(sitemap, visited, format))
+      );
+      allUrls = allUrls.concat(batchUrls.flat());
     }
-
-    const promises = sitemaps.map((sitemap) =>
-      this.fetchUrlsRecursively(sitemap, visited, format)
-    );
-    const results = await Promise.all(promises);
-    return results.flat(); // Flatten the array of arrays
+    return allUrls;
   }
 
   public async fetchUrlsRecursively(
@@ -57,59 +56,30 @@ export class SitemapProcessor {
     visited.add(sitemap);
 
     this.log(`\nFetching all URLs from sitemap: ${sitemap}`);
-    try {
-      const sitemapContent = await this.sitemapFetcher.fetchSitemapContent(sitemap);
+    const { content, isIndex } = await this.sitemapFetcher.fetchAndParseSitemap(sitemap);
 
-      if (!this.sitemapFetcher.isSitemapContent(sitemapContent)) {
-        this.log(`The content at ${sitemap} is not a valid sitemap.`);
-        return [];
-      }
-
-      let allUrls: string[] = [];
-      if (this.sitemapFetcher.isSitemapIndex(sitemapContent)) {
-        this.log(`Processing sitemap index: ${sitemap}`);
-        const nestedSitemaps = await this.sitemapFetcher.extractNestedSitemaps(sitemapContent);
-
-        if (nestedSitemaps.length === 0) {
-          this.log(`No nested sitemaps found in ${sitemap}.`);
-          return [];
-        }
-
-        this.log(`Nested sitemaps found: ${nestedSitemaps.length}`);
-        nestedSitemaps.forEach((nested, index) => this.log(`  ${index + 1}. ${nested}`));
-
-        // Process nested sitemaps in batches with concurrency control
-        for (let i = 0; i < nestedSitemaps.length; i += this.concurrencyLimit) {
-          const batch = nestedSitemaps.slice(i, i + this.concurrencyLimit);
-          const batchUrls = await this.processSitemapBatch(batch, visited, format);
-          allUrls = allUrls.concat(batchUrls);
-        }
-      } else if (this.sitemapFetcher.isSingleSitemap(sitemapContent)) {
-        this.log(`Processing single sitemap: ${sitemap}`);
-        const pageUrls = this.sitemapFetcher.extractPageUrls(sitemapContent);
-        this.log(`Extracted ${pageUrls.length} URLs from sitemap: ${sitemap}`);
-        pageUrls.forEach((url, index) => this.log(`  ${index + 1}. ${url}`));
-
-        // Filter product URLs using UrlFilter
-        const productUrls = pageUrls.filter((url) => this.urlFilter.isProductUrl(url));
-        this.log(`Product URLs identified: ${productUrls.length}`);
-        productUrls.forEach((url, index) => this.log(`  ${index + 1}. ${url}`));
-
-        allUrls = allUrls.concat(productUrls);
-
-        // Write product URLs to the chosen format
-        if (productUrls.length > 0) {
-          this.log(`Writing ${productUrls.length} product URLs to file...`);
-          await this.fileWriter.writeUrlsToFile(productUrls, format);
-        } else {
-          this.log(`No product URLs found in ${sitemap}. Skipping file writing.`);
-        }
-      }
-
-      return allUrls;
-    } catch (error) {
-      logger.error(`Error fetching sitemap ${sitemap}: ${(error as Error).message}`);
+    if (!this.sitemapFetcher.extractPageUrls(content).length) {
+      this.log(`The content at ${sitemap} is not a valid sitemap.`);
       return [];
     }
+
+    if (isIndex) {
+      this.log(`Processing sitemap index: ${sitemap}`);
+      const nestedSitemaps = await this.sitemapFetcher.extractNestedSitemaps(content);
+      return this.processNestedSitemaps(nestedSitemaps, visited, format);
+    }
+
+    this.log(`Processing single sitemap: ${sitemap}`);
+    const pageUrls = this.sitemapFetcher.extractPageUrls(content);
+    const productUrls = pageUrls.filter((url) => this.urlFilter.isProductUrl(url));
+
+    if (productUrls.length > 0) {
+      this.log(`Writing ${productUrls.length} product URLs to file...`);
+      await this.fileWriter.writeUrlsToFile(productUrls, format);
+    } else {
+      this.log(`No product URLs found in ${sitemap}. Skipping file writing.`);
+    }
+
+    return productUrls;
   }
 }

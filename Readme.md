@@ -6,11 +6,12 @@ The Sitemap Scraper is a tool designed to extract and process sitemap URLs from 
 
 ## Features
 
-- Fetch and parse `robots.txt` files.
+- Fetch and parse `robots.txt` files using a centralized `httpRequest` utility.
 - Extract sitemap URLs, including `.gz` compressed sitemaps.
 - Filter product-specific sitemaps and URLs.
 - Write extracted URLs to files in `csv`, `json`, or `txt` formats.
 - Centralized logging for progress tracking and debugging.
+- Centralized error handling with graceful application exit for unknown errors.
 - Configurable concurrency for processing large sitemaps efficiently.
 
 ## Installation

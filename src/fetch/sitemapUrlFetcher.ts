@@ -1,21 +1,35 @@
-import axios from 'axios';
-import zlib from 'zlib';
 import { parseStringPromise } from 'xml2js';
+import zlib from 'zlib';
+import { FetchError, ParseError } from '../errors/AppError';
 import logger from '../log/Logger';
+import { httpRequest } from '../utils/HttpClient';
 
 export class SitemapUrlFetcher {
   public async fetchSitemapContent(sitemapUrl: string): Promise<string> {
-    try {
-      const response = await axios.get(sitemapUrl, { responseType: 'arraybuffer' });
-      const contentType = response.headers['content-type'];
+    const response = await httpRequest<Buffer>(
+      sitemapUrl,
+      { responseType: 'arraybuffer' },
+      'SitemapUrlFetcher.fetchSitemapContent'
+    );
 
-      if (contentType === 'application/gzip') {
-        return zlib.gunzipSync(response.data).toString('utf-8');
-      } else {
-        return response.data.toString();
-      }
-    } catch (error) {
-      throw new Error(`Failed to fetch or parse sitemap: ${sitemapUrl} - ${(error as Error).message}`);
+    if (response.error) {
+      throw new FetchError(
+        sitemapUrl,
+        response.error,
+        response.error // Use the full error message from httpRequest
+      );
+    }
+
+    if (!response.data) {
+      throw new FetchError(sitemapUrl, 'No content received');
+    }
+
+    const contentType = response.headers?.['content-type'];
+
+    if (contentType === 'application/gzip') {
+      return zlib.gunzipSync(response.data).toString('utf-8');
+    } else {
+      return response.data.toString();
     }
   }
 
@@ -27,22 +41,18 @@ export class SitemapUrlFetcher {
       const currentSitemapUrl = sitemapUrlsToProcess.pop()!;
       logger.info(`Processing sitemap: ${currentSitemapUrl}`);
 
-      try {
-        const sitemapContent = await this.fetchSitemapContent(currentSitemapUrl);
+      const sitemapContent = await this.fetchSitemapContent(currentSitemapUrl);
 
-        if (!this.isSitemapContent(sitemapContent)) {
-          logger.warn(`The content at ${currentSitemapUrl} is not a valid sitemap.`);
-          continue;
-        }
-
-        const nestedSitemaps = await this.extractNestedSitemaps(sitemapContent);
-        sitemapUrlsToProcess.push(...nestedSitemaps);
-
-        const pageUrls = this.extractPageUrls(sitemapContent);
-        urls.push(...pageUrls);
-      } catch (error) {
-        logger.error(`Error processing sitemap ${currentSitemapUrl}: ${(error as Error).message}`);
+      if (!this.isSitemapContent(sitemapContent)) {
+        logger.warn(`The content at ${currentSitemapUrl} is not a valid sitemap.`);
+        continue;
       }
+
+      const nestedSitemaps = await this.extractNestedSitemaps(sitemapContent);
+      sitemapUrlsToProcess.push(...nestedSitemaps);
+
+      const pageUrls = this.extractPageUrls(sitemapContent);
+      urls.push(...pageUrls);
     }
 
     return urls;
@@ -53,40 +63,37 @@ export class SitemapUrlFetcher {
   }
 
   public isSitemapIndex(content: string): boolean {
-    return content.includes('<sitemapindex'); // Check if the content is a sitemap index
+    return content.includes('<sitemapindex');
   }
 
   public isSingleSitemap(content: string): boolean {
-    return content.includes('<urlset'); // Check if the content is a single sitemap
+    return content.includes('<urlset');
   }
 
   public async extractNestedSitemaps(sitemapContent: string): Promise<string[]> {
-    try {
-      const parsed = await parseStringPromise(sitemapContent, { explicitArray: false });
-      const sitemaps: string[] = [];
+    const parsed = await parseStringPromise(sitemapContent, { explicitArray: false }).catch((error) => {
+      throw new ParseError('sitemap content', error.message);
+    });
+    const sitemaps: string[] = [];
 
-      if (parsed.sitemapindex && parsed.sitemapindex.sitemap) {
-        const sitemapEntries = Array.isArray(parsed.sitemapindex.sitemap)
-          ? parsed.sitemapindex.sitemap
-          : [parsed.sitemapindex.sitemap];
+    if (parsed.sitemapindex && parsed.sitemapindex.sitemap) {
+      const sitemapEntries = Array.isArray(parsed.sitemapindex.sitemap)
+        ? parsed.sitemapindex.sitemap
+        : [parsed.sitemapindex.sitemap];
 
-        for (const entry of sitemapEntries) {
-          if (entry.loc) {
-            sitemaps.push(entry.loc);
-          }
+      for (const entry of sitemapEntries) {
+        if (entry.loc) {
+          sitemaps.push(entry.loc);
         }
       }
-
-      return sitemaps;
-    } catch (error) {
-      logger.error(`Failed to parse sitemap content: ${(error as Error).message}`);
-      return [];
     }
+
+    return sitemaps;
   }
 
   public extractPageUrls(sitemapContent: string): string[] {
     const urls: string[] = [];
-    const urlRegex = /<loc>(.*?)<\/loc>/g; // Match <loc> tags inside <urlset>
+    const urlRegex = /<loc>(.*?)<\/loc>/g;
     let match;
 
     while ((match = urlRegex.exec(sitemapContent)) !== null) {

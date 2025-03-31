@@ -1,22 +1,31 @@
-import axios from 'axios';
-import logger from '../log/Logger';
+import { IFetcher } from '../interfaces/IFetcher';
+import { FetchError } from '../errors/AppError';
 
 export class RobotsFetcher {
   private domain: string;
+  private fetcher: IFetcher;
 
-  constructor(domain: string) {
+  constructor(domain: string, fetcher: IFetcher) {
     this.domain = domain;
+    this.fetcher = fetcher;
   }
 
   public async fetchRobotsTxt(): Promise<string> {
     const robotsUrl = `${this.domain}/robots.txt`;
-    try {
-      const response = await axios.get(robotsUrl);
-      logger.info(`Fetched robots.txt from ${this.domain}`);
-      return response.data;
-    } catch (error) {
-      logger.error(`Failed to fetch robots.txt from ${this.domain}: ${(error as Error).message}`);
-      throw error;
+    const response = await this.fetcher.fetchContent(robotsUrl);
+
+    if (response.error) {
+      throw new FetchError(
+        robotsUrl,
+        response.error,
+        `Failed to fetch robots.txt from ${robotsUrl}: ${response.error}`
+      );
     }
+
+    if (!response.data) {
+      throw new FetchError(robotsUrl, 'No content received');
+    }
+
+    return response.data;
   }
 }

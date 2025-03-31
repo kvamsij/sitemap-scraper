@@ -3,6 +3,7 @@ import path from 'path';
 import { createObjectCsvWriter } from 'csv-writer';
 import slugify from 'slugify';
 import logger from '../log/Logger';
+import { WriteError } from '../errors/AppError';
 
 export class FileWriter {
   private domain: string;
@@ -40,7 +41,7 @@ export class FileWriter {
       return;
     }
 
-    logger.info(`Writing ${urls.length} URLs to file in ${format} format...`); // Debug log
+    logger.info(`Writing ${urls.length} URLs to file in ${format} format...`);
 
     const domainFolder = this.ensureDomainFolder();
     const filePath = path.join(domainFolder, `product_urls.${format}`);
@@ -55,14 +56,14 @@ export class FileWriter {
         const records = urls.map((url) => ({ url }));
         await csvWriter.writeRecords(records);
       } else if (format === 'json') {
-        fs.writeFileSync(filePath, JSON.stringify(urls, null, 2));
+        fs.writeFileSync(filePath, JSON.stringify(urls, null, 2), 'utf-8');
       } else if (format === 'txt') {
-        fs.writeFileSync(filePath, urls.join('\n'));
+        fs.writeFileSync(filePath, urls.join('\n'), 'utf-8');
       }
 
       logger.info(`Successfully wrote ${urls.length} URLs to ${filePath}`);
     } catch (error) {
-      logger.error(`Failed to write URLs to file: ${(error as Error).message}`);
+      throw new WriteError(`Failed to write URLs to file: ${filePath}`, (error as Error).message);
     }
   }
 }

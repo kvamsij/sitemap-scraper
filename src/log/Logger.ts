@@ -1,14 +1,14 @@
 import { createLogger, format, transports } from 'winston';
 
 const logger = createLogger({
-  level: 'info',
+  level: process.env.LOG_LEVEL || 'info', // Default log level is 'info'
   format: format.combine(
-    format.timestamp(),
-    format.printf(({ timestamp, level, message }) => `${timestamp} [${level.toUpperCase()}]: ${message}`)
+    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    format.printf(({ timestamp, level, message }) => `[${timestamp}] ${level.toUpperCase()}: ${message}`)
   ),
   transports: [
-    new transports.Console(),
-    new transports.File({ filename: 'logs/app.log' })
+    new transports.Console(), // Log to the console
+    new transports.File({ filename: 'logs/app.log', level: 'info' }) // Log to a file
   ],
 });
 
