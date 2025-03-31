@@ -10,5 +10,16 @@
   },
   "rules": {
     "prettier/prettier": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["*.js"],
+      "env": {
+        "commonjs": true
+      },
+      "globals": {
+        "module": "readonly"
+      }
+    }
+  ]
 }
