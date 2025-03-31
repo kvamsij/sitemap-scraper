@@ -1,0 +1,95 @@
+Project: "Sitemap Scraper"
+
+Description:
+
+    Develop a sitemap scraper that accepts a domain name as input, reads the `robots.txt` file, and extracts sitemap URLs. The scraper should handle both standard and `.gz` compressed sitemaps, filter product-specific sitemaps, and log events while writing the extracted data to a CSV file.
+
+Setup:
+
+1. Install the following dependencies:
+   - `typescript` for type safety.
+   - `jest` for unit testing.
+   - `axios` for HTTP requests.
+   - `ts-node` for running TypeScript files directly.
+
+2. Ensure the project is initialized with a `package.json` file and includes scripts for building and running the application.
+
+Development Plan:
+
+1. **Input Handling**:
+   - Create a class to accept and validate domain name input from the terminal.
+
+2. **Fetching `robots.txt`**:
+   - Create a class to fetch the `robots.txt` file from the provided domain.
+
+3. **Parsing `robots.txt`**:
+   - Create a class to parse the `robots.txt` file to:
+     - Extract allowed and disallowed paths.
+     - Identify and extract sitemap URLs.
+
+4. **Filtering Product Sitemaps**:
+   - Create a class to filter and identify product-specific sitemaps from the extracted sitemap URLs.
+
+5. **Fetching URLs from Sitemaps**:
+   - Create a class to fetch all URLs listed in the sitemap files.
+
+6. **Handling `.gz` Sitemaps**:
+   - Create a class to handle `.gz` compressed sitemap files and extract URLs.
+
+7. **Optimizing URL Extraction**:
+   - Implement parallel processing or batching to speed up the extraction of URLs from large sitemaps.
+
+8. **Logging System**:
+   - Implement a centralized logging system using `winston` to log events, errors, and application flow.
+
+9. **Writing to CSV**:
+   - Create a class to write the extracted URLs to a CSV file.
+
+Standards:
+
+1. **Test-Driven Development (TDD)**:
+   - Write unit tests for each class and method before implementing the logic.
+
+2. **SOLID Principles**:
+   - Ensure the code adheres to SOLID principles for maintainability and scalability.
+
+3. **Class-Based Design**:
+   - Use classes to encapsulate functionality and promote modularity.
+
+4. **Centralized Error Handling**:
+   - Implement a centralized error-handling mechanism to manage exceptions gracefully.
+
+5. **Centralized Logging**:
+   - Use `winston` for consistent and configurable logging.
+
+6. **Documentation**:
+   - Document all classes, methods, and significant logic using JSDoc or similar tools.
+
+7. **Code Quality**:
+   - Use a linter (e.g., ESLint) and formatter (e.g., Prettier) to maintain code quality and consistency.
+
+Development Workflow:
+
+1. Initialize the project with TypeScript and required dependencies.
+2. Set up a folder structure for better organization:
+   ```
+   src/
+     ├── input/
+     ├── fetch/
+     ├── parse/
+     ├── filter/
+     ├── log/
+     ├── write/
+     ├── tests/
+   ```
+3. Write unit tests for each module in the `tests/` directory.
+4. Implement functionality incrementally, ensuring all tests pass.
+5. Use Git for version control and maintain a clean commit history.
+6. Perform code reviews and refactor as needed.
+
+Deliverables:
+
+- A fully functional sitemap scraper.
+- Unit tests with high coverage.
+- Documentation for usage and development.
+- A CSV file containing the extracted URLs.
