@@ -17,7 +17,7 @@ export class UrlFilter {
       '\\d+$', // URLs ending with numeric IDs
       '\\?productId=',
       '\\?sku=',
-      '\\?itemId='
+      '\\?itemId=',
     ]
   ) {
     this.disallowedPaths = disallowedPaths;
@@ -41,9 +41,8 @@ export class UrlFilter {
         }
       }
       return true; // URL is allowed
-    } catch (error) {
-      console.error(`Invalid URL: ${url}`);
-      return false; // Treat invalid URLs as disallowed
+    } catch {
+      return false; // Treat invalid URLs as disallowed without logging
     }
   }
 
@@ -65,16 +64,15 @@ export class UrlFilter {
         '/products/', // URLs containing /products/
         '\\?productId=\\d+', // Query parameter ?productId=123
         '\\?sku=\\d+', // Query parameter ?sku=456
-        '\\?itemId=\\d+' // Query parameter ?itemId=789
+        '\\?itemId=\\d+', // Query parameter ?itemId=789
       ];
 
       return refinedPatterns.some((pattern) => {
         const regex = new RegExp(pattern, 'i'); // Case-insensitive matching
         return regex.test(fullPath);
       });
-    } catch (error) {
-      console.error(`Invalid URL: ${url}`);
-      return false; // Treat invalid URLs as non-product URLs
+    } catch {
+      return false; // Treat invalid URLs as non-product URLs without logging
     }
   }
 }
