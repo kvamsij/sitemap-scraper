@@ -1,6 +1,6 @@
 import { parseStringPromise } from 'xml2js';
 import zlib from 'zlib';
-import { ParseError } from '../errors/AppError';
+import { FetchError, ParseError } from '../errors/AppError';
 import logger from '../log/Logger';
 import { httpRequest } from '../utils/HttpClient';
 
@@ -11,7 +11,20 @@ export class SitemapUrlFetcher {
       { responseType: 'arraybuffer' },
       'SitemapUrlFetcher.fetchSitemapContent'
     );
-    const contentType = response.headers['content-type'];
+
+    if (response.error) {
+      throw new FetchError(
+        sitemapUrl,
+        response.error,
+        response.error // Use the full error message from httpRequest
+      );
+    }
+
+    if (!response.data) {
+      throw new FetchError(sitemapUrl, 'No content received');
+    }
+
+    const contentType = response.headers?.['content-type'];
 
     if (contentType === 'application/gzip') {
       return zlib.gunzipSync(response.data).toString('utf-8');

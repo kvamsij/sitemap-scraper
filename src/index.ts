@@ -4,11 +4,13 @@ import { RobotsFetcher } from './fetch/robotsFetcher';
 import { RobotsParser } from './parse/robotsParser';
 import { ProductSitemapFilter } from './filter/productSitemapFilter';
 import { SitemapUrlFetcher } from './fetch/sitemapUrlFetcher';
+import { SitemapFetcher } from './process/SitemapFetcher'; // Import SitemapFetcher
 import { UrlFilter } from './filter/urlFilter';
 import { SitemapProcessor } from './process/sitemapProcessor';
 import { FileWriter } from './write/fileWriter';
 import logger from './log/Logger';
 import { ErrorHandler } from './utils/ErrorHandler';
+import { httpRequest } from './utils/HttpClient';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -31,7 +33,14 @@ rl.question('Enter a domain name (e.g., example.com): ', (domain) => {
       const domainInput = new DomainInput(domain);
       logger.info(`Validated domain: ${domainInput.getDomain()}`);
 
-      const fetcher = new RobotsFetcher(domainInput.getDomain());
+      // Pass an implementation of IFetcher to RobotsFetcher
+      const fetcher = new RobotsFetcher(domainInput.getDomain(), {
+        fetchContent: async (url: string) => {
+          const response = await httpRequest<string>(url);
+          return { data: response.data, error: response.error }; // Return structured response
+        },
+      });
+
       const robotsTxt = await fetcher.fetchRobotsTxt();
       if (!robotsTxt) return;
 
@@ -44,7 +53,8 @@ rl.question('Enter a domain name (e.g., example.com): ', (domain) => {
       const productSitemaps = filter.getProductSitemaps();
 
       const urlFilter = new UrlFilter(disallowedPaths);
-      const sitemapFetcher = new SitemapUrlFetcher();
+      const sitemapUrlFetcher = new SitemapUrlFetcher();
+      const sitemapFetcher = new SitemapFetcher(sitemapUrlFetcher); // Instantiate SitemapFetcher
       const fileWriter = new FileWriter(domainInput.getDomain());
       const sitemapProcessor = new SitemapProcessor(sitemapFetcher, urlFilter, fileWriter, verbose);
 

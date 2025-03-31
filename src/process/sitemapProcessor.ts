@@ -1,17 +1,17 @@
-import { SitemapUrlFetcher } from '../fetch/sitemapUrlFetcher';
+import { SitemapFetcher } from './SitemapFetcher';
 import { UrlFilter } from '../filter/urlFilter';
 import logger from '../log/Logger';
 import { FileWriter } from '../write/fileWriter';
 
 export class SitemapProcessor {
-  private sitemapFetcher: SitemapUrlFetcher;
+  private sitemapFetcher: SitemapFetcher;
   private urlFilter: UrlFilter;
   private verbose: boolean;
   private fileWriter: FileWriter;
   private concurrencyLimit: number;
 
   constructor(
-    sitemapFetcher: SitemapUrlFetcher,
+    sitemapFetcher: SitemapFetcher,
     urlFilter: UrlFilter,
     fileWriter: FileWriter,
     verbose = true,
@@ -56,34 +56,30 @@ export class SitemapProcessor {
     visited.add(sitemap);
 
     this.log(`\nFetching all URLs from sitemap: ${sitemap}`);
-    const sitemapContent = await this.sitemapFetcher.fetchSitemapContent(sitemap);
+    const { content, isIndex } = await this.sitemapFetcher.fetchAndParseSitemap(sitemap);
 
-    if (!this.sitemapFetcher.isSitemapContent(sitemapContent)) {
+    if (!this.sitemapFetcher.extractPageUrls(content).length) {
       this.log(`The content at ${sitemap} is not a valid sitemap.`);
       return [];
     }
 
-    if (this.sitemapFetcher.isSitemapIndex(sitemapContent)) {
+    if (isIndex) {
       this.log(`Processing sitemap index: ${sitemap}`);
-      const nestedSitemaps = await this.sitemapFetcher.extractNestedSitemaps(sitemapContent);
+      const nestedSitemaps = await this.sitemapFetcher.extractNestedSitemaps(content);
       return this.processNestedSitemaps(nestedSitemaps, visited, format);
     }
 
-    if (this.sitemapFetcher.isSingleSitemap(sitemapContent)) {
-      this.log(`Processing single sitemap: ${sitemap}`);
-      const pageUrls = this.sitemapFetcher.extractPageUrls(sitemapContent);
-      const productUrls = pageUrls.filter((url) => this.urlFilter.isProductUrl(url));
+    this.log(`Processing single sitemap: ${sitemap}`);
+    const pageUrls = this.sitemapFetcher.extractPageUrls(content);
+    const productUrls = pageUrls.filter((url) => this.urlFilter.isProductUrl(url));
 
-      if (productUrls.length > 0) {
-        this.log(`Writing ${productUrls.length} product URLs to file...`);
-        await this.fileWriter.writeUrlsToFile(productUrls, format);
-      } else {
-        this.log(`No product URLs found in ${sitemap}. Skipping file writing.`);
-      }
-
-      return productUrls;
+    if (productUrls.length > 0) {
+      this.log(`Writing ${productUrls.length} product URLs to file...`);
+      await this.fileWriter.writeUrlsToFile(productUrls, format);
+    } else {
+      this.log(`No product URLs found in ${sitemap}. Skipping file writing.`);
     }
 
-    return [];
+    return productUrls;
   }
 }
