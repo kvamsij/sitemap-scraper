@@ -7,4 +7,5 @@ module.exports = {
     "^.+\\.tsx?$": ["ts-jest", {}],
   },
   testMatch: ["**/src/tests/**/*.test.ts"], // Ensure tests are run from the src folder
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"], // Add the setup file
 };

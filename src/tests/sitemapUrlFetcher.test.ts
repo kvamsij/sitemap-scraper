@@ -34,12 +34,13 @@ describe('SitemapUrlFetcher', () => {
   });
 
   it('should throw an error if fetching the sitemap fails', async () => {
-    mockedAxios.get.mockRejectedValueOnce(new Error('Network error'));
+    const sitemapUrl = 'https://example.com/sitemap.xml';
+    mockedAxios.get.mockRejectedValueOnce(new Error('Network error')); // Mock the rejected value
 
     const fetcher = new SitemapUrlFetcher();
 
-    await expect(fetcher.fetchSitemapContent('https://example.com/sitemap.xml')).rejects.toThrow(
-      'Failed to fetch or parse sitemap: https://example.com/sitemap.xml - Network error'
+    await expect(fetcher.fetchSitemapContent(sitemapUrl)).rejects.toThrow(
+      'SitemapUrlFetcher.fetchSitemapContent: Failed to fetch resource: https://example.com/sitemap.xml - Network error'
     );
   });
 });

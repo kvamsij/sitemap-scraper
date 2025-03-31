@@ -1,5 +1,5 @@
-import axios from 'axios';
 import logger from '../log/Logger';
+import { httpRequest } from '../utils/HttpClient';
 
 export class RobotsFetcher {
   private domain: string;
@@ -10,13 +10,8 @@ export class RobotsFetcher {
 
   public async fetchRobotsTxt(): Promise<string> {
     const robotsUrl = `${this.domain}/robots.txt`;
-    try {
-      const response = await axios.get(robotsUrl);
-      logger.info(`Fetched robots.txt from ${this.domain}`);
-      return response.data;
-    } catch (error) {
-      logger.error(`Failed to fetch robots.txt from ${this.domain}: ${(error as Error).message}`);
-      throw error;
-    }
+    const response = await httpRequest<string>(robotsUrl, undefined, 'RobotsFetcher.fetchRobotsTxt');
+    logger.info(`Fetched robots.txt from ${this.domain}`);
+    return response.data; // Access response.data
   }
 }
