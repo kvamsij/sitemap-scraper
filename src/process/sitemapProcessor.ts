@@ -1,6 +1,7 @@
 import { SitemapUrlFetcher } from '../fetch/sitemapUrlFetcher';
 import { UrlFilter } from '../filter/urlFilter';
 import { FileWriter } from '../write/fileWriter';
+import logger from '../log/Logger';
 
 export class SitemapProcessor {
   private sitemapFetcher: SitemapUrlFetcher;
@@ -24,7 +25,7 @@ export class SitemapProcessor {
   }
 
   private log(message: string): void {
-    if (this.verbose) console.log(message);
+    if (this.verbose) logger.info(message);
   }
 
   private async processSitemapBatch(
@@ -107,7 +108,7 @@ export class SitemapProcessor {
 
       return allUrls;
     } catch (error) {
-      console.error(`Error fetching sitemap ${sitemap}: ${(error as Error).message}`);
+      logger.error(`Error fetching sitemap ${sitemap}: ${(error as Error).message}`);
       return [];
     }
   }

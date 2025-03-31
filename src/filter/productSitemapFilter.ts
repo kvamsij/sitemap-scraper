@@ -1,3 +1,5 @@
+import logger from '../log/Logger';
+
 export class ProductSitemapFilter {
   private sitemapUrls: string[];
 
@@ -6,6 +8,7 @@ export class ProductSitemapFilter {
   }
 
   public getProductSitemaps(): string[] {
+    logger.info('Filtering product-specific sitemaps...');
     return this.sitemapUrls.filter((url) => {
       const urlObj = new URL(url);
       const path = urlObj.pathname.toLowerCase();
