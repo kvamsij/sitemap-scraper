@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { createObjectCsvWriter } from 'csv-writer';
 import slugify from 'slugify';
+import logger from '../log/Logger';
 
 export class FileWriter {
   private domain: string;
@@ -17,7 +18,7 @@ export class FileWriter {
 
   private ensureBaseDir(): void {
     if (!fs.existsSync(this.baseDir)) {
-      console.log(`Creating base directory: ${this.baseDir}`);
+      logger.info(`Creating base directory: ${this.baseDir}`);
       fs.mkdirSync(this.baseDir, { recursive: true });
     }
   }
@@ -25,25 +26,25 @@ export class FileWriter {
   private ensureDomainFolder(): string {
     const domainFolder = path.join(this.baseDir, this.domain);
     if (!fs.existsSync(domainFolder)) {
-      console.log(`Creating folder: ${domainFolder}`);
+      logger.info(`Creating folder: ${domainFolder}`);
       fs.mkdirSync(domainFolder, { recursive: true });
     } else {
-      console.log(`Folder already exists: ${domainFolder}`);
+      logger.info(`Folder already exists: ${domainFolder}`);
     }
     return domainFolder;
   }
 
   public async writeUrlsToFile(urls: string[], format: 'csv' | 'json' | 'txt'): Promise<void> {
     if (urls.length === 0) {
-      console.log('No URLs to write to the file.');
+      logger.warn('No URLs to write to the file.');
       return;
     }
 
-    console.log(`Writing ${urls.length} URLs to file in ${format} format...`); // Debug log
+    logger.info(`Writing ${urls.length} URLs to file in ${format} format...`); // Debug log
 
     const domainFolder = this.ensureDomainFolder();
     const filePath = path.join(domainFolder, `product_urls.${format}`);
-    console.log(`Resolved file path: ${filePath}`);
+    logger.info(`Resolved file path: ${filePath}`);
 
     try {
       if (format === 'csv') {
@@ -59,9 +60,9 @@ export class FileWriter {
         fs.writeFileSync(filePath, urls.join('\n'));
       }
 
-      console.log(`Successfully wrote ${urls.length} URLs to ${filePath}`);
+      logger.info(`Successfully wrote ${urls.length} URLs to ${filePath}`);
     } catch (error) {
-      console.error(`Failed to write URLs to file: ${(error as Error).message}`);
+      logger.error(`Failed to write URLs to file: ${(error as Error).message}`);
     }
   }
 }

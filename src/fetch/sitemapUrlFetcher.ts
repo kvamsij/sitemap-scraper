@@ -1,6 +1,7 @@
 import axios from 'axios';
 import zlib from 'zlib';
 import { parseStringPromise } from 'xml2js';
+import logger from '../log/Logger';
 
 export class SitemapUrlFetcher {
   public async fetchSitemapContent(sitemapUrl: string): Promise<string> {
@@ -24,13 +25,13 @@ export class SitemapUrlFetcher {
 
     while (sitemapUrlsToProcess.length > 0) {
       const currentSitemapUrl = sitemapUrlsToProcess.pop()!;
-      console.log(`Processing sitemap: ${currentSitemapUrl}`);
+      logger.info(`Processing sitemap: ${currentSitemapUrl}`);
 
       try {
         const sitemapContent = await this.fetchSitemapContent(currentSitemapUrl);
 
         if (!this.isSitemapContent(sitemapContent)) {
-          console.warn(`The content at ${currentSitemapUrl} is not a valid sitemap.`);
+          logger.warn(`The content at ${currentSitemapUrl} is not a valid sitemap.`);
           continue;
         }
 
@@ -40,7 +41,7 @@ export class SitemapUrlFetcher {
         const pageUrls = this.extractPageUrls(sitemapContent);
         urls.push(...pageUrls);
       } catch (error) {
-        console.error(`Error processing sitemap ${currentSitemapUrl}: ${(error as Error).message}`);
+        logger.error(`Error processing sitemap ${currentSitemapUrl}: ${(error as Error).message}`);
       }
     }
 
@@ -78,7 +79,7 @@ export class SitemapUrlFetcher {
 
       return sitemaps;
     } catch (error) {
-      console.error(`Failed to parse sitemap content: ${(error as Error).message}`);
+      logger.error(`Failed to parse sitemap content: ${(error as Error).message}`);
       return [];
     }
   }

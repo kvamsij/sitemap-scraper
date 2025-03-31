@@ -1,3 +1,5 @@
+import logger from '../log/Logger';
+
 export class RobotsParser {
   private robotsContent: string;
 
@@ -38,5 +40,9 @@ export class RobotsParser {
 
     // Remove duplicates and empty entries
     return Array.from(new Set(disallowedPaths)).filter((path) => path !== '/');
+  }
+
+  public parse(): void {
+    logger.info('Parsing robots.txt content...');
   }
 }

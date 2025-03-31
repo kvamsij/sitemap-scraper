@@ -3,3 +3,4 @@ createFolders.js
 dist/
 output/
 test_output/
+logs/

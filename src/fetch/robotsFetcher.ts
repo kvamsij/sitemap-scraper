@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '../log/Logger';
 
 export class RobotsFetcher {
   private domain: string;
@@ -11,9 +12,11 @@ export class RobotsFetcher {
     const robotsUrl = `${this.domain}/robots.txt`;
     try {
       const response = await axios.get(robotsUrl);
+      logger.info(`Fetched robots.txt from ${this.domain}`);
       return response.data;
     } catch (error) {
-      throw new Error(`Failed to fetch robots.txt from ${robotsUrl}: ${(error as Error).message}`);
+      logger.error(`Failed to fetch robots.txt from ${this.domain}: ${(error as Error).message}`);
+      throw error;
     }
   }
 }
