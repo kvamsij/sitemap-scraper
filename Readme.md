@@ -2,19 +2,27 @@
 
 ## Description
 
-The Sitemap Scraper is a tool that accepts a domain name as input, reads the `robots.txt` file, and extracts sitemap URLs. It handles both standard and `.gz` compressed sitemaps, filters product-specific sitemaps, and recursively fetches URLs from nested sitemaps. The tool also respects the `robots.txt` rules by filtering out disallowed URLs and identifies product URLs using configurable patterns. The extracted data can be logged and written to a CSV file.
+The Sitemap Scraper is a tool that accepts a domain name as input, reads the `robots.txt` file, and extracts sitemap URLs. It handles both standard and `.gz` compressed sitemaps, filters product-specific sitemaps, and recursively fetches URLs from nested sitemaps. The tool also respects the `robots.txt` rules by filtering out disallowed URLs and identifies product URLs using configurable patterns. The extracted data can be logged and written to a file in the desired format.
 
 ## Features
 
-- Validates domain name input.
-- Fetches and parses `robots.txt` to extract sitemap URLs and disallowed paths.
-- Filters out URLs that match disallowed paths in `robots.txt`.
-- Handles `.gz` compressed sitemaps.
-- Filters product-specific sitemaps.
-- Recursively processes nested sitemaps.
-- Extracts URLs from sitemaps.
-- Identifies product URLs using configurable patterns (e.g., `/product/`, `/item/`, `/sku/`, `/p/`, `/products/`, and query parameters like `?productId=`).
-- Logs events and errors.
+- **Domain Validation**:
+  - Validates domain name input and ensures it is properly formatted (e.g., adds `https://` if missing).
+- **Fetch and Parse `robots.txt`**:
+  - Extracts sitemap URLs and disallowed paths from the `robots.txt` file.
+- **Sitemap Handling**:
+  - Handles both standard and `.gz` compressed sitemaps.
+  - Recursively processes nested sitemaps.
+  - Filters product-specific sitemaps based on their paths.
+- **URL Filtering**:
+  - Filters out URLs that match disallowed paths in `robots.txt`.
+  - Identifies product URLs using configurable patterns (e.g., `/product/`, `/item/`, `/sku/`, `/p/`, `/products/`, and query parameters like `?productId=`).
+- **Output Formats**:
+  - Saves extracted product URLs to a file in the desired format (`csv`, `json`, or `txt`).
+- **Logging**:
+  - Logs events and errors for better debugging.
+- **Concurrency Control**:
+  - Processes sitemaps in batches with a configurable concurrency limit.
 
 ## Setup
 
@@ -55,7 +63,9 @@ The Sitemap Scraper is a tool that accepts a domain name as input, reads the `ro
 
 2. Enter a domain name when prompted (e.g., `example.com`).
 
-3. The application will:
+3. Choose an output format (`csv`, `json`, or `txt`) when prompted.
+
+4. The application will:
    - Validate the domain.
    - Fetch and parse the `robots.txt` file.
    - Extract sitemap URLs and disallowed paths.
@@ -63,6 +73,7 @@ The Sitemap Scraper is a tool that accepts a domain name as input, reads the `ro
    - Recursively fetch URLs from nested sitemaps.
    - Filter out URLs that match disallowed paths.
    - Identify and display product URLs based on configurable patterns.
+   - Save the extracted product URLs to a file in the chosen format.
 
 ## Folder Structure
 
@@ -73,8 +84,26 @@ src/
   ├── parse/                # Parses robots.txt
   ├── filter/               # Filters product-specific sitemaps and URLs
   ├── log/                  # (Future) Logging system
-  ├── write/                # (Future) Writes data to CSV
+  ├── write/                # Writes data to files
+  ├── process/              # Processes sitemaps and URLs
   ├── tests/                # Unit tests
+```
+
+## Output Organization
+
+- Extracted product URLs are saved in a folder named after the slugified domain (e.g., `example-com` for `example.com`).
+- Supported output formats:
+  - **CSV**: A `.csv` file with a single column for URLs.
+  - **JSON**: A `.json` file containing an array of URLs.
+  - **TXT**: A `.txt` file with one URL per line.
+
+Example folder structure for the domain `example.com`:
+```
+output/
+  ├── example-com/
+      ├── product_urls.csv
+      ├── product_urls.json
+      ├── product_urls.txt
 ```
 
 ## Development
@@ -118,7 +147,7 @@ src/
 - A fully functional sitemap scraper.
 - Unit tests with high coverage.
 - Documentation for usage and development.
-- A CSV file containing the extracted URLs (future implementation).
+- A file containing the extracted URLs in the desired format.
 
 ## License
 

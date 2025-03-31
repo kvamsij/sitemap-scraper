@@ -6,8 +6,10 @@ export class ProductSitemapFilter {
   }
 
   public getProductSitemaps(): string[] {
-    return this.sitemapUrls.filter((url) =>
-      url.toLowerCase().includes('product')
-    );
+    return this.sitemapUrls.filter((url) => {
+      const urlObj = new URL(url);
+      const path = urlObj.pathname.toLowerCase();
+      return path.includes('product'); // Match "product" in the path
+    });
   }
 }

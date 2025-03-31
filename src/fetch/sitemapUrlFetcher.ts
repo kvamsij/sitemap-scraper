@@ -1,5 +1,6 @@
 import axios from 'axios';
 import zlib from 'zlib';
+import { parseStringPromise } from 'xml2js';
 
 export class SitemapUrlFetcher {
   public async fetchSitemapContent(sitemapUrl: string): Promise<string> {
@@ -33,7 +34,7 @@ export class SitemapUrlFetcher {
           continue;
         }
 
-        const nestedSitemaps = this.extractNestedSitemaps(sitemapContent);
+        const nestedSitemaps = await this.extractNestedSitemaps(sitemapContent);
         sitemapUrlsToProcess.push(...nestedSitemaps);
 
         const pageUrls = this.extractPageUrls(sitemapContent);
@@ -51,23 +52,35 @@ export class SitemapUrlFetcher {
   }
 
   public isSitemapIndex(content: string): boolean {
-    return content.includes('<sitemapindex');
+    return content.includes('<sitemapindex'); // Check if the content is a sitemap index
   }
 
   public isSingleSitemap(content: string): boolean {
-    return content.includes('<urlset');
+    return content.includes('<urlset'); // Check if the content is a single sitemap
   }
 
-  public extractNestedSitemaps(sitemapContent: string): string[] {
-    const nestedSitemaps: string[] = [];
-    const sitemapRegex = /<sitemap><loc>(.*?)<\/loc><\/sitemap>/g;
-    let match;
+  public async extractNestedSitemaps(sitemapContent: string): Promise<string[]> {
+    try {
+      const parsed = await parseStringPromise(sitemapContent, { explicitArray: false });
+      const sitemaps: string[] = [];
 
-    while ((match = sitemapRegex.exec(sitemapContent)) !== null) {
-      nestedSitemaps.push(match[1]);
+      if (parsed.sitemapindex && parsed.sitemapindex.sitemap) {
+        const sitemapEntries = Array.isArray(parsed.sitemapindex.sitemap)
+          ? parsed.sitemapindex.sitemap
+          : [parsed.sitemapindex.sitemap];
+
+        for (const entry of sitemapEntries) {
+          if (entry.loc) {
+            sitemaps.push(entry.loc);
+          }
+        }
+      }
+
+      return sitemaps;
+    } catch (error) {
+      console.error(`Failed to parse sitemap content: ${(error as Error).message}`);
+      return [];
     }
-
-    return nestedSitemaps;
   }
 
   public extractPageUrls(sitemapContent: string): string[] {
