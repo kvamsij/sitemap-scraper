@@ -2,7 +2,7 @@ Project: "Sitemap Scraper"
 
 Description:
 
-    Develop a sitemap scraper that accepts a domain name as input, reads the `robots.txt` file, and extracts sitemap URLs. The scraper should handle both standard and `.gz` compressed sitemaps, filter product-specific sitemaps, and log events while writing the extracted data to a CSV file.
+    Develop a sitemap scraper that accepts a domain name as input, reads the `robots.txt` file, and extracts sitemap URLs. The scraper should handle both standard and `.gz` compressed sitemaps, filter product-specific sitemaps, and log events while writing the extracted data to a CSV file. The scraper should also filter URLs based on disallowed paths in `robots.txt` and identify product URLs using configurable patterns.
 
 Setup:
 
@@ -31,10 +31,13 @@ Development Plan:
    - Create a class to filter and identify product-specific sitemaps from the extracted sitemap URLs.
 
 5. **Fetching URLs from Sitemaps**:
-   - Create a class to fetch all URLs listed in the sitemap files.
+   - Create a class to fetch all URLs listed in both standard and `.gz` compressed sitemap files.
+   - Handle nested sitemaps by recursively fetching and parsing them.
 
-6. **Handling `.gz` Sitemaps**:
-   - Create a class to handle `.gz` compressed sitemap files and extract URLs.
+6. **Filtering URLs**:
+   - Implement a class to filter URLs based on:
+     - Disallowed paths in `robots.txt`.
+     - Configurable product URL patterns (e.g., `/product/`, `/item/`, `/sku/`, `/p/`, `/products/`, and query parameters like `?productId=`).
 
 7. **Optimizing URL Extraction**:
    - Implement parallel processing or batching to speed up the extraction of URLs from large sitemaps.

@@ -1,9 +1,10 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} **/
-/* global module*/
+/* global module */
 
 module.exports = {
   testEnvironment: "node",
   transform: {
-    "^.+.tsx?$": ["ts-jest",{}],
+    "^.+\\.tsx?$": ["ts-jest", {}],
   },
+  testMatch: ["**/src/tests/**/*.test.ts"], // Ensure tests are run from the src folder
 };
