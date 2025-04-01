@@ -1,3 +1,4 @@
+import logger from '../log/Logger';
 
 export class RobotsParser {
   private robotsContent: string;
@@ -7,36 +8,45 @@ export class RobotsParser {
   }
 
   public getSitemapUrls(): string[] {
-    const sitemapUrls: string[] = [];
-    const lines = this.robotsContent.split('\n');
+    logger.info('Parsing sitemap URLs from robots.txt...');
+    const sitemapUrls: Set<string> = new Set();
+    const lines = this.getLines();
 
     for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine.toLowerCase().startsWith('sitemap:')) {
-        const url = trimmedLine.substring(8).trim();
-        if (url) {
-          sitemapUrls.push(url);
-        }
+      const url = this.extractDirectiveValue(line, 'sitemap');
+      if (url) {
+        sitemapUrls.add(url);
       }
     }
 
-    return sitemapUrls;
+    logger.info(`Found ${sitemapUrls.size} unique sitemap URLs.`);
+    return Array.from(sitemapUrls);
   }
 
   public getDisallowedPaths(): string[] {
-    const disallowedPaths: string[] = [];
-    const lines = this.robotsContent.split('\n');
+    logger.info('Parsing disallowed paths from robots.txt...');
+    const disallowedPaths: Set<string> = new Set();
+    const lines = this.getLines();
 
     for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine.toLowerCase().startsWith('disallow:')) {
-        const path = trimmedLine.split(':')[1]?.trim();
-        if (path) {
-          disallowedPaths.push(path);
-        }
+      const path = this.extractDirectiveValue(line, 'disallow');
+      if (path && path !== '/') {
+        disallowedPaths.add(path);
       }
     }
 
-    return Array.from(new Set(disallowedPaths)).filter((path) => path !== '/');
+    logger.info(`Found ${disallowedPaths.size} unique disallowed paths.`);
+    return Array.from(disallowedPaths);
+  }
+
+  private getLines(): string[] {
+    return this.robotsContent.split('\n').map((line) => line.trim());
+  }
+
+  private extractDirectiveValue(line: string, directive: string): string | null {
+    if (line.toLowerCase().startsWith(`${directive}:`)) {
+      return line.substring(directive.length + 1).trim();
+    }
+    return null;
   }
 }

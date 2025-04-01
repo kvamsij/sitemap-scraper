@@ -1,6 +1,6 @@
 import logger from '../log/Logger';
 
-export class ProductSitemapFilter {
+export class SitemapFilters {
   private sitemapUrls: string[];
 
   constructor(sitemapUrls: string[]) {

@@ -4,17 +4,17 @@ import { createObjectCsvWriter } from 'csv-writer';
 import slugify from 'slugify';
 import logger from '../log/Logger';
 import { WriteError } from '../errors/AppError';
+import { IFileWriter } from '../interfaces/IFileWriter';
 
-export class FileWriter {
+export class FileWriter implements IFileWriter {
   private domain: string;
   private baseDir: string;
 
   constructor(domain: string, baseDir = 'output') {
-    // Remove protocol (http:// or https://) before slugifying
     const domainWithoutProtocol = domain.replace(/^https?:\/\//, '');
-    this.domain = slugify(domainWithoutProtocol.replace(/\./g, '-'), { lower: true, strict: true }); // Replace dots with hyphens
+    this.domain = slugify(domainWithoutProtocol.replace(/\./g, '-'), { lower: true, strict: true });
     this.baseDir = baseDir;
-    this.ensureBaseDir(); // Ensure the base directory exists
+    this.ensureBaseDir();
   }
 
   private ensureBaseDir(): void {

@@ -1,27 +1,32 @@
 import readline from 'readline';
-import { DomainInput } from './input/domainInput';
-import { RobotsFetcher } from './fetch/robotsFetcher';
-import { RobotsParser } from './parse/robotsParser';
-import { ProductSitemapFilter } from './filter/productSitemapFilter';
-import { SitemapUrlFetcher } from './fetch/sitemapUrlFetcher';
-import { SitemapFetcher } from './process/SitemapFetcher'; // Import SitemapFetcher
-import { UrlFilter } from './filter/urlFilter';
-import { SitemapProcessor } from './process/sitemapProcessor';
-import { FileWriter } from './write/fileWriter';
+import { RobotsFetcher } from './fetch/robots-fetcher';
+import { SitemapFetcher } from './fetch/sitemap-fetcher';
+import { UrlFetcher } from './fetch/url-fetcher';
+import { RobotsProcessor } from './process/robots-processor';
+import { SitemapProcessor } from './process/sitemap-processor';
+import { UrlProcessor } from './process/url-processor';
+import { UrlFilter } from './filter/url-filter';
+import { FileWriter } from './write/file-writer';
+import { Processor } from './process/index';
+import { WorkflowContext, WorkflowStep } from './process/workflow-types';
 import logger from './log/Logger';
-import { ErrorHandler } from './utils/ErrorHandler';
-import { httpRequest } from './utils/HttpClient';
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-const verbose = false; // Disable verbose logging
-
 logger.info('Application started');
 
-rl.question('Enter a domain name (e.g., example.com): ', (domain) => {
+function normalizeDomain(domain: string): string {
+  if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
+    return `https://${domain}`;
+  }
+  return domain;
+}
+
+rl.question('Enter a domain name (e.g., https://example.com): ', (domain) => {
+  const normalizedDomain = normalizeDomain(domain);
   rl.question('Choose an output format (csv, json, txt): ', async (format) => {
     if (!['csv', 'json', 'txt'].includes(format)) {
       logger.error('Invalid format. Please choose from csv, json, or txt.');
@@ -30,44 +35,44 @@ rl.question('Enter a domain name (e.g., example.com): ', (domain) => {
     }
 
     try {
-      const domainInput = new DomainInput(domain);
-      logger.info(`Validated domain: ${domainInput.getDomain()}`);
+      // Initialize fetchers
+      const robotsFetcher = new RobotsFetcher();
+      const sitemapFetcher = new SitemapFetcher();
+      const urlFetcher = new UrlFetcher();
 
-      // Pass an implementation of IFetcher to RobotsFetcher
-      const fetcher = new RobotsFetcher(domainInput.getDomain(), {
-        fetchContent: async (url: string) => {
-          const response = await httpRequest<string>(url);
-          return { data: response.data, error: response.error }; // Return structured response
-        },
-      });
+      // Initialize filters and file writer
+      const urlFilter = new UrlFilter();
+      const fileWriter = new FileWriter(normalizedDomain);
 
-      const robotsTxt = await fetcher.fetchRobotsTxt();
-      if (!robotsTxt) return;
+      // Define workflow steps
+      const steps: WorkflowStep[] = [
+        new RobotsProcessor(robotsFetcher),
+        new SitemapProcessor(sitemapFetcher),
+        new UrlProcessor(urlFetcher, urlFilter),
+      ];
 
-      logger.info('Fetched robots.txt content');
-      const parser = new RobotsParser(robotsTxt);
-      const sitemaps = parser.getSitemapUrls();
-      const disallowedPaths = parser.getDisallowedPaths();
+      // Initialize the processor
+      const processor = new Processor(steps);
 
-      const filter = new ProductSitemapFilter(sitemaps);
-      const productSitemaps = filter.getProductSitemaps();
+      // Define the initial workflow context
+      const context: WorkflowContext = {
+        domain: normalizedDomain,
+        sitemaps: [],
+        visited: new Set<string>(),
+        allSitemapUrls: [],
+        productUrls: [],
+      };
 
-      const urlFilter = new UrlFilter(disallowedPaths);
-      const sitemapUrlFetcher = new SitemapUrlFetcher();
-      const sitemapFetcher = new SitemapFetcher(sitemapUrlFetcher); // Instantiate SitemapFetcher
-      const fileWriter = new FileWriter(domainInput.getDomain());
-      const sitemapProcessor = new SitemapProcessor(sitemapFetcher, urlFilter, fileWriter, verbose);
+      // Execute the workflow
+      await processor.process(context);
 
-      const visitedSitemaps = new Set<string>();
-      const sitemapsToProcess = productSitemaps.length > 0 ? productSitemaps : sitemaps;
-
-      for (const sitemap of sitemapsToProcess) {
-        await sitemapProcessor.fetchUrlsRecursively(sitemap, visitedSitemaps, format as 'csv' | 'json' | 'txt');
-      }
+      // Write the extracted product URLs to a file
+      const productUrls = context.productUrls.map((entry) => entry.url);
+      await fileWriter.writeUrlsToFile(productUrls, format as 'csv' | 'json' | 'txt');
 
       logger.info(`Process complete! Extracted product URLs have been saved in the ${format} format.`);
     } catch (error) {
-      ErrorHandler.handleError(error); // Centralized error handling
+      logger.error(`An error occurred: ${(error as Error).message}`);
     } finally {
       rl.close();
     }

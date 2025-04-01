@@ -1,18 +1,11 @@
 import { IFetcher } from '../interfaces/IFetcher';
+import { httpRequest } from '../utils/HttpClient';
 import { FetchError } from '../errors/AppError';
 
-export class RobotsFetcher {
-  private domain: string;
-  private fetcher: IFetcher;
-
-  constructor(domain: string, fetcher: IFetcher) {
-    this.domain = domain;
-    this.fetcher = fetcher;
-  }
-
-  public async fetchRobotsTxt(): Promise<string> {
-    const robotsUrl = `${this.domain}/robots.txt`;
-    const response = await this.fetcher.fetchContent(robotsUrl);
+export class RobotsFetcher implements IFetcher<string> {
+  public async fetchContent(domain: string): Promise<string> {
+    const robotsUrl = `${domain}/robots.txt`;
+    const response = await httpRequest<string>(robotsUrl, undefined, 'Fetching robots.txt');
 
     if (response.error) {
       throw new FetchError(

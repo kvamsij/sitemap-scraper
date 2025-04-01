@@ -36,4 +36,31 @@ describe('RobotsParser', () => {
     expect(parser.getSitemapUrls()).toEqual([]);
     expect(parser.getDisallowedPaths()).toEqual([]);
   });
+
+  it('should return unique sitemap URLs', () => {
+    const robotsContent = `
+      Sitemap: https://example.com/sitemap.xml
+      Sitemap: https://example.com/sitemap.xml
+      Sitemap: https://example.com/sitemap2.xml
+    `;
+    const parser = new RobotsParser(robotsContent);
+    const sitemaps = parser.getSitemapUrls();
+
+    expect(sitemaps).toEqual([
+      'https://example.com/sitemap.xml',
+      'https://example.com/sitemap2.xml',
+    ]);
+  });
+
+  it('should handle malformed robots.txt content gracefully', () => {
+    const malformedContent = `
+      User-agent: *
+      Disallow
+      Sitemap
+    `;
+    const parser = new RobotsParser(malformedContent);
+
+    expect(parser.getSitemapUrls()).toEqual([]);
+    expect(parser.getDisallowedPaths()).toEqual([]);
+  });
 });

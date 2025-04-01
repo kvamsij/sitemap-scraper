@@ -1,8 +1,3 @@
-export interface FetchResponse {
-  data?: string;
-  error?: string;
-}
-
-export interface IFetcher {
-  fetchContent(url: string): Promise<FetchResponse>;
+export interface IFetcher<T> {
+  fetchContent(param: T): Promise<string>;
 }
