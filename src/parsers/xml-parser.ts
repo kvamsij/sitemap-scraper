@@ -1,4 +1,4 @@
-import { IParser } from './IParser';
+import { IParser } from '../interfaces/IParser';
 import * as cheerio from 'cheerio';
 
 export class XmlParser implements IParser {

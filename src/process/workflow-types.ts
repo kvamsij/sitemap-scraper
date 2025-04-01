@@ -7,5 +7,6 @@ export interface WorkflowContext {
   sitemaps: string[];
   visited: Set<string>;
   allSitemapUrls: string[];
+  disallowedPaths: string[]; // Optional, only for robots.txt
   productUrls: { url: string; lastMod?: string; frequency?: string }[];
 }

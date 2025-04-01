@@ -42,6 +42,7 @@ export class FileWriter implements IFileWriter {
     }
 
     logger.info(`Writing ${urls.length} URLs to file in ${format} format...`);
+    logger.debug(`URLs to be written: ${JSON.stringify(urls)}`);
 
     const domainFolder = this.ensureDomainFolder();
     const filePath = path.join(domainFolder, `product_urls.${format}`);

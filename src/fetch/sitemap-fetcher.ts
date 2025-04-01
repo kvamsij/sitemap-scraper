@@ -3,6 +3,7 @@ import { httpRequest } from '../utils/HttpClient';
 
 export class SitemapFetcher implements IFetcher<string> {
   public async fetchContent(url: string): Promise<string> {
+
     const response = await httpRequest<string>(url, undefined, 'Fetching sitemap content');
 
     if (response.error) {

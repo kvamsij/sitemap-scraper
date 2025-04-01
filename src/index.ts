@@ -9,6 +9,7 @@ import { UrlFilter } from './filter/url-filter';
 import { FileWriter } from './write/file-writer';
 import { Processor } from './process/index';
 import { WorkflowContext, WorkflowStep } from './process/workflow-types';
+import { ContentParser } from './parsers'; // Import ContentParser
 import logger from './log/Logger';
 
 const rl = readline.createInterface({
@@ -40,8 +41,16 @@ rl.question('Enter a domain name (e.g., https://example.com): ', (domain) => {
       const sitemapFetcher = new SitemapFetcher();
       const urlFetcher = new UrlFetcher();
 
+      // Fetch and parse robots.txt
+      const robotsTxt = await robotsFetcher.fetchContent(normalizedDomain);
+      const contentParser = new ContentParser(robotsTxt);
+      const { sitemaps, disallowedPaths } = contentParser.extractSitemapsAndDisallowedPaths(robotsTxt) || {
+        sitemaps: [],
+        disallowedPaths: [],
+      };
+
       // Initialize filters and file writer
-      const urlFilter = new UrlFilter();
+      const urlFilter = new UrlFilter(disallowedPaths);
       const fileWriter = new FileWriter(normalizedDomain);
 
       // Define workflow steps
@@ -57,9 +66,10 @@ rl.question('Enter a domain name (e.g., https://example.com): ', (domain) => {
       // Define the initial workflow context
       const context: WorkflowContext = {
         domain: normalizedDomain,
-        sitemaps: [],
+        sitemaps,
         visited: new Set<string>(),
         allSitemapUrls: [],
+        disallowedPaths: disallowedPaths,
         productUrls: [],
       };
 
