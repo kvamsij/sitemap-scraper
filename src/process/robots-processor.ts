@@ -1,5 +1,5 @@
 import { IFetcher } from '../interfaces/IFetcher';
-import { RobotsParser } from '../parse/robotsParser';
+import { RobotsParser } from '../parsers/robots-parser';
 import { WorkflowStep, WorkflowContext } from './workflow-types';
 
 export class RobotsProcessor implements WorkflowStep {
@@ -15,7 +15,7 @@ export class RobotsProcessor implements WorkflowStep {
       console.log('No robots.txt found.');
       return;
     }
-
+    
     const parser = new RobotsParser(robotsTxt);
     context.sitemaps = parser.getSitemapUrls();
   }
